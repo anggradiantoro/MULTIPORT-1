@@ -161,7 +161,7 @@ echo '
       "settings": {
             "clients": [
                {
-                 "id": "$uuif",
+                 "id": "$uuid",
                  "alterId": 0
 #vmessgrpc
              }
