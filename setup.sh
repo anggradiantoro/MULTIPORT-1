@@ -43,13 +43,13 @@ sleep 2
 # // Add Folder
 clear
 mkdir -p /etc/jinggovpn/xray
-mkdir -p /etc/jinggovpn//tls
+mkdir -p /etc/jinggovpn/tls
 mkdir -p /var/log/xray/
 mkdir /var/lib/jinggo007;
-touch /etc/jinggovpn//xray/uservmess.txt
-touch /etc/jinggovpn//xray/uservless.txt
-touch /etc/jinggovpn//xray/usertrojan.txt
-touch /etc/jinggovpn//xray/userss.txt
+touch /etc/jinggovpn/xray/uservmess.txt
+touch /etc/jinggovpn/xray/uservless.txt
+touch /etc/jinggovpn/xray/usertrojan.txt
+touch /etc/jinggovpn/xray/userss.txt
 clear
 echo -e ""
 echo -e "${green}MASUKKAN DOMAIN ANDA YANG TELAH DI POINT KE IP ANDA${NC}"
@@ -60,7 +60,7 @@ if [[ ${host_ip} == "${ip}" ]]; then
     echo -e ""
     echo -e "${green}HOST/DOMAIN MATCHED..INSTALLATION WILL CONTINUE${NC}"
     echo "IP=$host" >> /var/lib/jinggo007/ipvps.conf
-    echo "$host" >> /etc/jingovpn/xray/domain
+    echo "$host" >> /etc/jinggovpn/xray/domain
     echo "$host" >> /root/domain
     sleep 2
     clear
