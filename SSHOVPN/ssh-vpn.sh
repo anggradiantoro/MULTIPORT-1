@@ -158,113 +158,64 @@ ufw disable
 touch /etc/nginx/conf.d/alone.conf
 cat <<EOF >>/etc/nginx/conf.d/alone.conf
 server {
-             listen 80;
-             listen [::]:80;
-             listen 443 ssl http2 reuseport;
-             listen [::]:443 http2 reuseport;	
-             server_name ${domain};
-             ssl_certificate /etc/jinggovpn/tls/xray.crt;
-             ssl_certificate_key /etc/jinggovpn/tls/xray.key;
-             ssl_ciphers EECDH+CHACHA20:EECDH+CHACHA20-draft:EECDH+ECDSA+AES128:EECDH+aRSA+AES128:RSA+AES128:EECDH+ECDSA+AES256:EECDH+aRSA+AES256:RSA+AES256:EECDH+ECDSA+3DES:EECDH+aRSA+3DES:RSA+3DES:!MD5;
-             ssl_protocols TLSv1.1 TLSv1.2 TLSv1.3;
-             root /usr/share/nginx/html;
+  listen 81;
+  listen [::]:81;
+  server_name ${domain};
+  # shellcheck disable=SC2154
+  return 301 https://${domain};
+}
+server {
+    listen 127.0.0.1:31300;
+    server_name _;
+    return 403;
+}
+server {
+  listen 127.0.0.1:31302 http2;
+  server_name ${domain};
+  root /usr/share/nginx/html;
+  location /s/ {
+        add_header Content-Type text/plain;
+        alias /etc/jinggovpn/config-url/;
+    }
 
-             location = /vless {
-                       proxy_redirect off;
-                       proxy_pass http://127.0.0.1:14016;
-                       proxy_http_version 1.1;
-             proxy_set_header X-Real-IP aaa;
-             proxy_set_header X-Forwarded-For bbb;
-             proxy_set_header Upgrade ddd;
-             proxy_set_header Connection "upgrade";
-             proxy_set_header Host ccc;
- }
-             location = /vmess {
-                       proxy_redirect off;
-                       proxy_pass http://127.0.0.1:23456;
-                       proxy_http_version 1.1;
-             proxy_set_header X-Real-IP aaa;
-             proxy_set_header X-Forwarded-For bbb;
-             proxy_set_header Upgrade ddd;
-             proxy_set_header Connection "upgrade";
-             proxy_set_header Host ccc;
- }
-             location = /trojan-ws {
-                       proxy_redirect off;
-                       proxy_pass http://127.0.0.1:25432;
-                       proxy_http_version 1.1;
-             proxy_set_header X-Real-IP aaa;
-             proxy_set_header X-Forwarded-For bbb;
-             proxy_set_header Upgrade ddd;
-             proxy_set_header Connection "upgrade";
-             proxy_set_header Host ccc;
- }
-             location = /ss-ws {
-                      proxy_redirect off;
-                      proxy_pass http://127.0.0.1:30300;
-                      proxy_http_version 1.1;
-             proxy_set_header X-Real-IP aaa;
-             proxy_set_header X-Forwarded-For bbb;
-             proxy_set_header Upgrade ddd;
-             proxy_set_header Connection "upgrade";
-             proxy_set_header Host ccc;
- }
-             location ^~ /vless-grpc {
-                      proxy_redirect off;
-                      grpc_set_header X-Real-IP aaa;
-                      grpc_set_header X-Forwarded-For bbb;
-             grpc_set_header Host ccc;
-             grpc_pass grpc://127.0.0.1:24456;
- }
-             location ^~ /vmess-grpc {
-                      proxy_redirect off;
-                      grpc_set_header X-Real-IP aaa;
-                      grpc_set_header X-Forwarded-For bbb;
-             grpc_set_header Host ccc;
-             grpc_pass grpc://127.0.0.1:31234;
- }
-             location ^~ /trojan-grpc {
-                      proxy_redirect off;
-                      grpc_set_header X-Real-IP aaa;
-                      grpc_set_header X-Forwarded-For bbb;
-             grpc_set_header Host ccc;
-             grpc_pass grpc://127.0.0.1:33456;
- }
-             location ^~ /ss-grpc {
-                      proxy_redirect off;
-                      grpc_set_header X-Real-IP aaa;
-                      grpc_set_header X-Forwarded-For bbb;
-             grpc_set_header Host ccc;
-             grpc_pass grpc://127.0.0.1:30310;
- }
-             location  /fallback {
-                      proxy_redirect off;
-                      proxy_pass http://127.0.0.1:8880;
-                      proxy_http_version 1.1;
-              proxy_set_header Upgrade ddd;
-              proxy_set_header Connection upgrade;
-              proxy_set_header Host ccc;
-              proxy_cache_bypass ddd;
+    location /vlessgrpc {
+    client_max_body_size 0;
+#   keepalive_time 1071906480m;
+    keepalive_requests 4294967296;
+    client_body_timeout 1071906480m;
+    send_timeout 1071906480m;
+    lingering_close always;
+    grpc_read_timeout 1071906480m;
+    grpc_send_timeout 1071906480m;
+    grpc_pass grpc://127.0.0.1:31301;
   }
-        }	
+
+  location /trojangrpc {
+    client_max_body_size 0;
+    # keepalive_time 1071906480m;
+    keepalive_requests 4294967296;
+    client_body_timeout 1071906480m;
+    send_timeout 1071906480m;
+    lingering_close always;
+    grpc_read_timeout 1071906480m;
+    grpc_send_timeout 1071906480m;
+    grpc_pass grpc://127.0.0.1:31304;
+  }
+}
+server {
+  listen 127.0.0.1:31300;
+  server_name ${domain};
+  root /usr/share/nginx/html;
+  location /s/ {
+    add_header Content-Type text/plain;
+    alias /etc/vpnlegasi/config-url/;
+  }
+  location / {
+    add_header Strict-Transport-Security "max-age=15552000; preload" always;
+  }
+}
 EOF
-
-# // Move
-sed -i 's/aaa/$remote_addr/g' /etc/nginx/conf.d/alone.conf
-sed -i 's/bbb/$proxy_add_x_forwarded_for/g' /etc/nginx/conf.d/alone.conf
-sed -i 's/ccc/$host/g' /etc/nginx/conf.d/alone.conf
-sed -i 's/ddd/$http_upgrade/g' /etc/nginx/conf.d/alone.conf
-
-# // Certv2ray
-curl -s https://get.acme.sh | sh
-/root/.acme.sh/acme.sh  --upgrade  --auto-upgrade
-/root/.acme.sh/acme.sh --set-default-ca --server letsencrypt
-/root/.acme.sh/acme.sh --issue -d ${domain} --standalone -k ec-256 --listen-v6 --force >> /etc/jinggovpn/tls/$domain.log
-~/.acme.sh/acme.sh --installcert -d ${domain} --fullchainpath /etc/jinggovpn/tls/xray.crt --keypath /etc/jinggovpn/tls/xray.key --ecc
-cat /etc/jinggovpn/tls/$domain.log
-
-sleep 1
-clear
+sed -i "s/80/81/g" /etc/nginx/sites-enabled/default
 
 # // Boot Nginx
 mkdir /etc/systemd/system/nginx.service.d
@@ -272,7 +223,19 @@ printf "[Service]\nExecStartPost=/bin/sleep 0.1\n" > /etc/systemd/system/nginx.s
 rm /etc/nginx/conf.d/default.conf
 systemctl daemon-reload
 service nginx restart
+
+# // Certv2ray
+systemctl stop nginx
+sudo kill -9 $(sudo lsof -t -i:80)
+curl -s https://get.acme.sh | sh
+/root/.acme.sh/acme.sh  --upgrade  --auto-upgrade
+/root/.acme.sh/acme.sh --set-default-ca --server letsencrypt
+/root/.acme.sh/acme.sh --issue -d ${domain} --standalone -k ec-256 --listen-v6 --force >> /etc/jinggovpn/tls/$domain.log
+~/.acme.sh/acme.sh --installcert -d ${domain} --fullchainpath /etc/jinggovpn/xray/xray.crt --keypath /etc/jinggovpn/xray/xray.key --ecc
 cd
+service nginx restart
+sleep 1
+clear
 
 # // Html
 rm -rf /usr/share/nginx/html
