@@ -179,16 +179,6 @@ server {
              proxy_set_header Connection "upgrade";
              proxy_set_header Host ccc;
  }
-              location = /vless-xtls {
-                       proxy_redirect off;
-                       proxy_pass http://127.0.0.1:84445;
-                       proxy_http_version 1.1;
-             proxy_set_header X-Real-IP aaa;
-             proxy_set_header X-Forwarded-For bbb;
-             proxy_set_header Upgrade ddd;
-             proxy_set_header Connection "upgrade";
-             proxy_set_header Host ccc;
-}
              location = /vmess {
                        proxy_redirect off;
                        proxy_pass http://127.0.0.1:23456;
