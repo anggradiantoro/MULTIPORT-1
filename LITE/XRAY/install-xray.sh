@@ -36,6 +36,7 @@ mkdir -p /usr/local/etc/xray/
 touch /usr/local/etc/xray/akunxtr.conf
 touch /usr/local/etc/xray/vless.txt
 touch /usr/local/etc/xray/vmess.txt
+touch /usr/local/etc/xray/xtr.txt
 
 
 # / / Unzip Xray Linux 64
@@ -59,9 +60,9 @@ chmod +x /root/.acme.sh/acme.sh
 service squid start
 
 
-uuid=$(cat /proc/sys/kernel/random/uuid)
+
 cat> /usr/local/etc/xray/config.json << END
-{
+echo' {
   "log": {
     "access": "/var/log/xray/access.log",
     "error": "/var/log/xray/error.log",
@@ -257,6 +258,7 @@ cat> /usr/local/etc/xray/config.json << END
   }
 }
 END
+uuid=$(cat /proc/sys/kernel/random/uuid)
 cat> /usr/local/etc/xray/none.json << END
 {
   "log": {
