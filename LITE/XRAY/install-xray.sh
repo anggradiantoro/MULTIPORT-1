@@ -58,14 +58,10 @@ chmod +x /root/.acme.sh/acme.sh
 ~/.acme.sh/acme.sh --installcert -d $domain --fullchainpath /usr/local/etc/xray/xray.crt --keypath /usr/local/etc/xray/xray.key --ecc
 service squid start
 
-uid1=$(cat /proc/sys/kernel/random/uuid)
+uuid=$(cat /proc/sys/kernel/random/uuid)
+uuid1=$(cat /proc/sys/kernel/random/uuid)
 uuid2=$(cat /proc/sys/kernel/random/uuid)
-uuid3=$(cat /proc/sys/kernel/random/uuid)
-uuid4=$(cat /proc/sys/kernel/random/uuid)
-uuid5=$(cat /proc/sys/kernel/random/uuid)
-uuid6=$(cat /proc/sys/kernel/random/uuid)
-
-cat <<EOF >/usr/local/etc/xray/config.json 
+cat> /usr/local/etc/xray/config.json << END
 {
   "log": {
     "access": "/var/log/xray/access.log",
@@ -79,7 +75,7 @@ cat <<EOF >/usr/local/etc/xray/config.json
             "settings": {
                 "clients": [
                     {
-                        "id": "${uuid1}",
+                        "id": "${uuid}",
                         "flow": "xtls-rprx-direct",
                         "level": 0
 #xray-vless-xtls
@@ -152,7 +148,7 @@ cat <<EOF >/usr/local/etc/xray/config.json
             "settings": {
                 "clients": [
                     {
-                        "id": "${uuid3}",
+                        "id": "${uuid1}",
                         "alterId": 0,
                         "level": 0
 #xray-vmess-tls
@@ -175,7 +171,7 @@ cat <<EOF >/usr/local/etc/xray/config.json
             "settings": {
                 "clients": [
                     {
-                        "id": "${uuid5}",
+                        "id": "${uuid}",
                         "level": 0
 #xray-vless-tls
                     }
@@ -276,7 +272,7 @@ cat> /usr/local/etc/xray/none.json << END
             "settings": {
             "clients": [
                 {
-                  "id": "${uuid4}",
+                  "id": "${uuid1}",
                   "alterId": 0,
                   "level": 0
 #xray-vmess-nontls
@@ -308,7 +304,7 @@ cat> /usr/local/etc/xray/none.json << END
             "settings": {
             "clients": [
                 {
-                  "id": "${uuid6}"
+                  "id": "${uuid}"
 #xray-vless-nontls
                 }
             ],
@@ -403,9 +399,9 @@ cat> /usr/local/etc/xray/none.json << END
     }
   }
 }
-EOF
+END
 # starting xray vmess ws tls core on sytem startup
-cat <<EOF >/etc/systemd/system/xray.service 
+cat> /etc/systemd/system/xray.service << END
 [Unit]
 Description=Xray Service
 Documentation=https://github.com/xtls
@@ -416,7 +412,7 @@ User=root
 CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
 AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
 NoNewPrivileges=true
-ExecStart=/usr/local/bin/xray -config /usr/local/etc/xray/config.json
+ExecStart=/usr/local/bin/xray run -config /usr/local/etc/xray/config.json
 Restart=on-failure
 RestartPreventExitStatus=23
 LimitNPROC=10000
@@ -425,7 +421,7 @@ LimitNOFILE=1000000
 [Install]
 WantedBy=multi-user.target
 
-EOF
+END
 
 # starting xray vmess ws tls core on sytem startup
 cat> /etc/systemd/system/xray@.service << END
