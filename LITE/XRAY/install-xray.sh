@@ -58,9 +58,8 @@ chmod +x /root/.acme.sh/acme.sh
 ~/.acme.sh/acme.sh --installcert -d $domain --fullchainpath /usr/local/etc/xray/xray.crt --keypath /usr/local/etc/xray/xray.key --ecc
 service squid start
 
+
 uuid=$(cat /proc/sys/kernel/random/uuid)
-uuid1=$(cat /proc/sys/kernel/random/uuid)
-uuid2=$(cat /proc/sys/kernel/random/uuid)
 cat> /usr/local/etc/xray/config.json << END
 {
   "log": {
@@ -75,7 +74,7 @@ cat> /usr/local/etc/xray/config.json << END
             "settings": {
                 "clients": [
                     {
-                        "id": "${uuid}",
+                        "id": "$uuid",
                         "flow": "xtls-rprx-direct",
                         "level": 0
 #xray-vless-xtls
@@ -122,7 +121,7 @@ cat> /usr/local/etc/xray/config.json << END
             "settings": {
                 "clients": [
                     {
-                        "id": "${uuid2}",
+                        "id": "$uuid",
                         "password": "xxxxxx"
 #trojan
                     }
@@ -148,7 +147,7 @@ cat> /usr/local/etc/xray/config.json << END
             "settings": {
                 "clients": [
                     {
-                        "id": "${uuid1}",
+                        "id": "$uuid",
                         "alterId": 0,
                         "level": 0
 #xray-vmess-tls
@@ -171,7 +170,7 @@ cat> /usr/local/etc/xray/config.json << END
             "settings": {
                 "clients": [
                     {
-                        "id": "${uuid}",
+                        "id": "$uuid",
                         "level": 0
 #xray-vless-tls
                     }
@@ -272,7 +271,7 @@ cat> /usr/local/etc/xray/none.json << END
             "settings": {
             "clients": [
                 {
-                  "id": "${uuid1}",
+                  "id": "$uuid",
                   "alterId": 0,
                   "level": 0
 #xray-vmess-nontls
@@ -304,7 +303,7 @@ cat> /usr/local/etc/xray/none.json << END
             "settings": {
             "clients": [
                 {
-                  "id": "${uuid}"
+                  "id": "$uuid"
 #xray-vless-nontls
                 }
             ],
