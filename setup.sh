@@ -61,20 +61,14 @@ sleep 2
 
 # // Add Folder
 clear
-mkdir -p /etc/jinggovpn
 mkdir -p /etc/jinggovpn/xray
-mkdir -p /etc/jinggovpn/ntls
 mkdir -p /etc/jinggovpn/tls
-mkdir -p /etc/jinggovpn/config-url
-mkdir -p /etc/jinggovpn/config-user
-mkdir -p /etc/jinggovpn/xray/conf
-mkdir -p /etc/jinggovpn/ntls/conf
-mkdir -p /etc/systemd/system/
 mkdir -p /var/log/xray/
-touch /etc/jinggovpn/xray/user.txt
+mkdir /var/lib/jinggo007;
 touch /etc/jinggovpn/xray/uservmess.txt
 touch /etc/jinggovpn/xray/uservless.txt
 touch /etc/jinggovpn/xray/usertrojan.txt
+touch /etc/jinggovpn/xray/userss.txt
 clear
 echo -e ""
 echo -e "${GREEN}MASUKKAN DOMAIN ANDA YANG TELAH DI POINT KE IP ANDA${NC}"
