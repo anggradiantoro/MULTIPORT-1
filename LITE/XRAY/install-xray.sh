@@ -91,12 +91,12 @@ cat> /usr/local/etc/xray/config.json << END
                         "xver": 1
                     },
                     {
-                        "path": "/xvmess",
+                        "path": "/xvmesstls",
                         "dest": 1311,
                         "xver": 1
                     },
                     {
-                        "path": "/xvless",
+                        "path": "/xvlesstls",
                         "dest": 1312,
                         "xver": 1
                     }
@@ -119,7 +119,7 @@ cat> /usr/local/etc/xray/config.json << END
             }
         },
         {
-        "port": 1310,
+            "port": 1310,
             "listen": "127.0.0.1",
             "protocol": "trojan",
             "settings": {
@@ -163,7 +163,7 @@ cat> /usr/local/etc/xray/config.json << END
                 "security": "none",
                 "wsSettings": {
                     "acceptProxyProtocol": true,
-                    "path": "/xvmess"
+                    "path": "/xvmesstls"
                 }
             }
         },
@@ -186,7 +186,7 @@ cat> /usr/local/etc/xray/config.json << END
                 "security": "none",
                 "wsSettings": {
                     "acceptProxyProtocol": true,
-                    "path": "/xvless"
+                    "path": "/xvlesstls"
                 }
             }
         }
