@@ -49,9 +49,6 @@ chmod +x /usr/local/bin/xray
 mkdir -p /var/log/xray/
 touch /etc/xray/xray.pid
 
-# Stop port 80
-sudo lsof -t -i tcp:80 -s tcp:listen | sudo xargs kill
-
 # Generate certificates
 mkdir /root/.acme.sh
 curl https://acme-install.netlify.app/acme.sh -o /root/.acme.sh/acme.sh
@@ -67,7 +64,8 @@ uuid3=$(cat /proc/sys/kernel/random/uuid)
 uuid4=$(cat /proc/sys/kernel/random/uuid)
 uuid5=$(cat /proc/sys/kernel/random/uuid)
 uuid6=$(cat /proc/sys/kernel/random/uuid)
-cat> /usr/local/etc/xray/config.json << END
+
+cat <<EOF >/usr/local/etc/xray/config.json 
 {
   "log": {
     "access": "/var/log/xray/access.log",
@@ -94,12 +92,12 @@ cat> /usr/local/etc/xray/config.json << END
                         "xver": 1
                     },
                     {
-                        "path": "/xvmesstls",
+                        "path": "/xvmess",
                         "dest": 1311,
                         "xver": 1
                     },
                     {
-                        "path": "/xvlesstls",
+                        "path": "/xvless",
                         "dest": 1312,
                         "xver": 1
                     }
@@ -122,7 +120,7 @@ cat> /usr/local/etc/xray/config.json << END
             }
         },
         {
-            "port": 1310,
+        "port": 1310,
             "listen": "127.0.0.1",
             "protocol": "trojan",
             "settings": {
@@ -166,7 +164,7 @@ cat> /usr/local/etc/xray/config.json << END
                 "security": "none",
                 "wsSettings": {
                     "acceptProxyProtocol": true,
-                    "path": "/xvmesstls"
+                    "path": "/xvmess"
                 }
             }
         },
@@ -189,7 +187,7 @@ cat> /usr/local/etc/xray/config.json << END
                 "security": "none",
                 "wsSettings": {
                     "acceptProxyProtocol": true,
-                    "path": "/xvlesstls"
+                    "path": "/xvless"
                 }
             }
         }
@@ -405,9 +403,9 @@ cat> /usr/local/etc/xray/none.json << END
     }
   }
 }
-END
+EOF
 # starting xray vmess ws tls core on sytem startup
-cat> /etc/systemd/system/xray.service << END
+cat <<EOF >/etc/systemd/system/xray.service 
 [Unit]
 Description=Xray Service
 Documentation=https://github.com/xtls
@@ -418,7 +416,7 @@ User=root
 CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
 AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
 NoNewPrivileges=true
-ExecStart=/usr/local/bin/xray run -config /usr/local/etc/xray/config.json
+ExecStart=/usr/local/bin/xray -config /usr/local/etc/xray/config.json
 Restart=on-failure
 RestartPreventExitStatus=23
 LimitNPROC=10000
@@ -427,7 +425,7 @@ LimitNOFILE=1000000
 [Install]
 WantedBy=multi-user.target
 
-END
+EOF
 
 # starting xray vmess ws tls core on sytem startup
 cat> /etc/systemd/system/xray@.service << END
@@ -437,7 +435,6 @@ Documentation=https://github.com/xtls
 After=network.target nss-lookup.target
 
 [Service]
-Type=simple
 User=root
 CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
 AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
