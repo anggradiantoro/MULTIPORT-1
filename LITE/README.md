@@ -7,4 +7,4 @@
 # INSTALL
 
 ```html
-wget https://raw.githubusercontent.com/jinGGo007/MULTIPORT/main/setup.sh && chmod +x setup.sh && ./setup.sh
+wget https://raw.githubusercontent.com/jinGGo007/MULTIPORT/main/LITE/setup.sh && chmod +x setup.sh && ./setup.sh
