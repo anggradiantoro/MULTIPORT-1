@@ -21,141 +21,58 @@ chronyc tracking -v
 ufw disable
 date
 
+# // Xray
+bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install --version 1.5.8
 
- INSTALL XRAY
-wget -c -P /etc/jinggovpn/xray/ "https://github.com/XTLS/Xray-core/releases/download/v1.5.8/Xray-linux-64.zip"
-unzip -o /etc/jinggovpn/xray/Xray-linux-64.zip -d /etc/jinggovpn/xray
-rm -rf /etc/jinggovpn/xray/Xray-linux-64.zip
-chmod 655 /etc/jinggovpn/xray/xray
+
+# // Restart & Add File
+systemctl daemon-reload
+systemctl stop xray
+systemctl start xray
+systemctl enable xray.service
 
 # // Uuid Service
 uuid=$(cat /proc/sys/kernel/random/uuid)
 
-# XRay boot service
-cat <<EOF >/etc/systemd/system/xray.service
-[Unit]
-Description=Xray - A unified platform for anti-censorship
-# Documentation=https://xraynt.com https://guide.v2fly.org
-After=network.target nss-lookup.target
-Wants=network-online.target
-
-[Service]
-Type=simple
-User=root
-CapabilityBoundingSet=CAP_NET_BIND_SERVICE CAP_NET_RAW
-NoNewPrivileges=yes
-ExecStart=/etc/jinggovpn/xray/xray run -confdir /etc/jinggovpn/xray/conf
-Restart=on-failure
-RestartPreventExitStatus=23
-
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-cat <<EOF >/etc/systemd/system/xray@n.service
-[Unit]
-Description=Xray - A unified platform for anti-censorship
-# Documentation=https://xraynt.com https://guide.v2fly.org
-After=network.target nss-lookup.target
-Wants=network-online.target
-
-[Service]
-Type=simple
-User=root
-CapabilityBoundingSet=CAP_NET_BIND_SERVICE CAP_NET_RAW
-NoNewPrivileges=yes
-ExecStart=/etc/jinggovpn/xray/xray run -config /etc/jinggovpn/xray/vless-nontls.json
-Restart=on-failure
-RestartPreventExitStatus=23
-
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-systemctl daemon-reload
-systemctl enable xray.service
-cat <<EOF >/etc/jinggovpn/xray/conf/00_log.json
+# // Json File
+echo '
 {
-  "log": {
+  "log" : {
     "access": "/var/log/xray/access.log",
     "error": "/var/log/xray/error.log",
     "loglevel": "warning"
-  }
-}
-EOF
-cat <<EOF >/etc/jinggovpn/xray/conf/10_ipv4_outbounds.json
-{
-    "outbounds":[
-        {
-            "protocol":"freedom",
-            "settings":{
-                "domainStrategy":"UseIPv4"
-            },
-            "tag":"IPv4-out"
-        },
-        {
-            "protocol":"freedom",
-            "settings":{
-                "domainStrategy":"UseIPv6"
-            },
-            "tag":"IPv6-out"
-        },
-        {
-            "protocol":"blackhole",
-            "tag":"blackhole-out"
-        }
-    ]
-}
-EOF
-cat <<EOF >/etc/jinggovpn/xray/conf/11_dns.json
-{
-    "dns": {
-        "servers": [
-          "localhost"
-        ]
-  }
-}
-EOF
-cat <<EOF >/etc/jinggovpn/xray/conf/02_VLESS_TCP_inbounds.json
-{
-  "log": {
-    "access": "/var/log/xray/access.log",
-    "error": "/var/log/xray/error.log",
-    "loglevel": "info"
   },
   "inbounds": [
-    {
-      "port": 443,
-      "protocol": "vless",
-      "tag": "VLESSTCP",
+      {
+      "listen": "127.0.0.1",
+      "port": 10085,
+      "protocol": "dokodemo-door",
       "settings": {
-        "clients": [],
+        "address": "127.0.0.1"
+      },
+      "tag": "api"
+    },
+      {
+      "port": 87654,
+      "protocol": "vless",
+      "settings": {
+        "clients":  [
+          {
+            "id": "$uuid",
+            "flow": "xtls-rprx-direct"
+#vxtls
+          }
+        ],
         "decryption": "none",
         "fallbacks": [
           {
-            "dest": 31296,
+            "dest": 60000,
+            "alpn": "",
             "xver": 1
           },
           {
-            "alpn": "h1",
-            "dest": 31333,
-            "xver": 0
-          },
-          {
+            "dest": 60001,
             "alpn": "h2",
-            "dest": 31302,
-            "xver": 0
-          },
-          {
-            "path": "/xrayws",
-            "dest": 31297,
-            "xver": 1
-          },
-          {
-            "path": "/xrayvws",
-            "dest": 31299,
             "xver": 1
           }
         ]
@@ -165,256 +82,171 @@ cat <<EOF >/etc/jinggovpn/xray/conf/02_VLESS_TCP_inbounds.json
         "security": "xtls",
         "xtlsSettings": {
           "minVersion": "1.2",
-          "alpn": [
-            "http/1.1",
-            "h2"
+          }
+    },
+   {
+     "listen": "127.0.0.1",
+     "port": "14016",
+     "protocol": "vless",
+      "settings": {
+          "decryption":"none",
+            "clients": [
+               {
+                 "id": "$uuid"                 
+#vless
+             }
+          ]
+       },
+       "streamSettings":{
+         "network": "ws",
+            "wsSettings": {
+                "path": "/vless"
+          }
+        }
+     },
+     {
+     "listen": "127.0.0.1",
+     "port": "23456",
+     "protocol": "vmess",
+      "settings": {
+            "clients": [
+               {
+                 "id": "$uuid",
+                 "alterId": 0
+#vmess
+             }
+          ]
+       },
+       "streamSettings":{
+         "network": "ws",
+            "wsSettings": {
+                "path": "/vmess"
+          }
+        }
+     },
+    {
+      "listen": "127.0.0.1",
+      "port": "25432",
+      "protocol": "trojan",
+      "settings": {
+          "decryption":"none",		
+           "clients": [
+              {
+                 "password": "$uuid"
+#trojanws
+              }
           ],
-          "certificates": [
-            {
-              "certificateFile": "/etc/jinggovpn/xray/xray.crt",
-              "keyFile": "/etc/jinggovpn/xray/xray.key",
-              "ocspStapling": 3600,
-              "usage": "encipherment"
+         "udp": true
+       },
+       "streamSettings":{
+           "network": "ws",
+           "wsSettings": {
+               "path": "/trojan-ws"
             }
-          ]
-        }
-      }
-    }
-  ]
-}
-EOF
-cat <<EOF >/etc/jinggovpn/xray/conf/03_VLESS_WS_inbounds.json
-{
-  "log": {
-    "access": "/var/log/xray/access.log",
-    "error": "/var/log/xray/error.log",
-    "loglevel": "info"
-  },
-  "inbounds": [
+         }
+     },
     {
-      "port": 31297,
-      "listen": "127.0.0.1",
-      "protocol": "vless",
-      "tag": "VLESSWS",
-      "settings": {
-        "clients": [],
-        "decryption": "none"
-      },
-      "streamSettings": {
-        "network": "ws",
-        "security": "none",
-        "wsSettings": {
-          "acceptProxyProtocol": true,
-          "path": "/xrayws"
-        }
-      }
-    }
-  ]
-}
-EOF
-cat <<EOF >/etc/jinggovpn/xray/conf/04_trojan_gRPC_inbounds.json
-{
-  "log": {
-    "access": "/var/log/xray/access.log",
-    "error": "/var/log/xray/error.log",
-    "loglevel": "info"
-  },
-    "inbounds": [
-        {
-            "port": 31304,
-            "listen": "127.0.0.1",
-            "protocol": "trojan",
-            "tag": "trojangRPCTCP",
-            "settings": {
-                "clients": [
-                    {
-      "id": "${uuid}",
-                        "password": "",
-                        "email": "${domain}_trojan_gRPC"
-                    }
-                ],
-                "fallbacks": [
-                    {
-                        "dest": "31300"
-                    }
-                ]
-            },
-            "streamSettings": {
-                "network": "grpc",
-                "grpcSettings": {
-                    "serviceName": "trojangrpc"
-                }
-            }
-        }
-    ]
-}
-EOF
-cat <<EOF >/etc/jinggovpn/xray/conf/04_trojan_TCP_inbounds.json
-{
-  "log": {
-    "access": "/var/log/xray/access.log",
-    "error": "/var/log/xray/error.log",
-    "loglevel": "info"
-  },
-  "inbounds": [
-    {
-      "port": 31296,
-      "listen": "127.0.0.1",
-      "protocol": "trojan",
-      "tag": "trojanTCP",
-      "settings": {
-        "clients": [],
-        "fallbacks": [
-          {
-            "dest": "31300"
-          }
-        ]
-      },
-      "streamSettings": {
-        "network": "tcp",
-        "security": "none",
-        "tcpSettings": {
-          "acceptProxyProtocol": true
-        }
-      }
-    }
-  ]
-}
-EOF
-cat <<EOF >/etc/jinggovpn/xray/conf/10_trojan_XTLS_inbounds.json
-{
-  "log": {
-    "access": "/var/log/xray/access.log",
-    "error": "/var/log/xray/error.log",
-    "loglevel": "info"
-  },
-  "inbounds": [
-    {
-      "port": 31230,
-      "listen": "127.0.0.1",
-      "protocol": "trojan",
-      "tag": "trojanXTLS",
-      "settings": {
-        "clients": [],
-        "fallbacks": [
-          {
-            "dest": "31333"
-          }
-        ]
-      },
-      "streamSettings": {
-        "network": "tcp",
-        "security": "xtls",
-        "xtlsSettings": {
-             "alpn": [
-            "http/1.1",
-            "h1"
-          ]
-        }
-      }
-    }
-  ]
-}
-EOF
-cat <<EOF >/etc/jinggovpn/xray/conf/05_VMess_WS_inbounds.json
-{
-  "log": {
-    "access": "/var/log/xray/access.log",
-    "error": "/var/log/xray/error.log",
-    "loglevel": "info"
-  },
-  "inbounds": [
-    {
-      "listen": "127.0.0.1",
-      "port": 31299,
-      "protocol": "vmess",
-      "tag": "VMessWS",
-      "settings": {
-        "clients": []
-      },
-      "streamSettings": {
-        "network": "ws",
-        "security": "none",
-        "wsSettings": {
-          "acceptProxyProtocol": true,
-          "path": "/xrayvws"
-        }
-      }
-    }
-  ]
-}
-EOF
-cat <<EOF >/etc/jinggovpn/xray/conf/06_VLESS_gRPC_inbounds.json
-{
-  "log": {
-    "access": "/var/log/xray/access.log",
-    "error": "/var/log/xray/error.log",
-    "loglevel": "info"
-  },
-    "inbounds":[
-    {
-        "port": 31301,
-        "listen": "127.0.0.1",
-        "protocol": "vless",
-        "tag":"VLESSGRPC",
+         "listen": "127.0.0.1",
+        "port": "30300",
+        "protocol": "shadowsocks",
         "settings": {
-            "clients": [],
-            "decryption": "none"
-        },
-        "streamSettings": {
-            "network": "grpc",
+           "clients": [
+           {
+           "method": "aes-128-gcm",
+          "password": "$uuid"
+#ssws
+           }
+          ],
+          "network": "tcp,udp"
+       },
+       "streamSettings":{
+          "network": "ws",
+             "wsSettings": {
+               "path": "/ss-ws"
+           }
+        }
+     },	
+      {
+        "listen": "127.0.0.1",
+     "port": "24456",
+        "protocol": "vless",
+        "settings": {
+         "decryption":"none",
+           "clients": [
+             {
+               "id": "$uuid"
+#vlessgrpc
+             }
+          ]            
+       },
+          "streamSettings":{
+             "network": "grpc",
+             "grpcSettings": {
+                "serviceName": "vless-grpc"
+           }
+        }
+     },
+     {
+      "listen": "127.0.0.1",
+     "port": "31234",
+     "protocol": "vmess",
+      "settings": {
+            "clients": [
+               {
+                 "id": "$uuid",
+                 "alterId": 0
+#vmessgrpc
+             }
+          ]
+       },
+       "streamSettings":{
+         "network": "grpc",
             "grpcSettings": {
-                "serviceName": "vlessgrpc"
-            }
+                "serviceName": "vmess-grpc"
+          }
         }
-    }
-]
-}
-EOF
-
-cat >/etc/jinggovpn/xray/conf/vmess-nontls.json <<END
-{
-  "log": {
-    "access": "/var/log/xray/access.log",
-    "error": "/var/log/xray/error.log",
-    "loglevel": "info"
+     },
+     {
+        "listen": "127.0.0.1",
+     "port": "33456",
+        "protocol": "trojan",
+        "settings": {
+          "decryption":"none",
+             "clients": [
+               {
+                 "password": "$uuid"
+#trojangrpc
+               }
+           ]
+        },
+         "streamSettings":{
+         "network": "grpc",
+           "grpcSettings": {
+               "serviceName": "trojan-grpc"
+         }
+      }
   },
-  "inbounds": [
-    {
-      "port": 80,
-      "protocol": "vmess",
-      "settings": {
+   {
+    "listen": "127.0.0.1",
+    "port": "30310",
+    "protocol": "shadowsocks",
+    "settings": {
         "clients": [
           {
-            "id": "${uuid}",
-            "alterId": 0
-#xray
+             "method": "aes-128-gcm",
+             "password": "$uuid"
+#ssgrpc
+           }
+         ],
+           "network": "tcp,udp"
+      },
+    "streamSettings":{
+     "network": "grpc",
+        "grpcSettings": {
+           "serviceName": "ss-grpc"
           }
-        ]
-      },
-      "streamSettings": {
-        "network": "ws",
-        "wsSettings": {
-          "path": "/xrayws",
-          "headers": {
-            "Host": ""
-          }
-         },
-        "quicSettings": {},
-        "sockopt": {
-          "mark": 0,
-          "tcpFastOpen": true
-        }
-      },
-      "sniffing": {
-        "enabled": true,
-        "destOverride": [
-          "http",
-          "tls"
-        ]
-      },
-      "domain": "$domain"
-    }
+       }
+    }	
   ],
   "outbounds": [
     {
@@ -450,6 +282,13 @@ cat >/etc/jinggovpn/xray/conf/vmess-nontls.json <<END
         "outboundTag": "blocked"
       },
       {
+        "inboundTag": [
+          "api"
+        ],
+        "outboundTag": "api",
+        "type": "field"
+      },
+      {
         "type": "field",
         "outboundTag": "blocked",
         "protocol": [
@@ -457,132 +296,69 @@ cat >/etc/jinggovpn/xray/conf/vmess-nontls.json <<END
         ]
       }
     ]
-  }
-}
-END
-
-cat >/etc/jinggovpn/xray/vless-nontls.json <<END
-{
-  "log": {
-    "access": "/var/log/xray/access.log",
-    "error": "/var/log/xray/error2.log",
-    "loglevel": "info"
   },
-  "inbounds": [
-    {
-      "port": 8088,
-      "protocol": "vless",
-      "settings": {
-        "clients": [
-          {
-            "id": "${uuid}"
-#xray
-          }
-        ],
-        "decryption": "none"
-      },
-      "streamSettings": {
-        "network": "ws",
-        "wsSettings": {
-          "path": "/xrayws",
-          "headers": {
-            "Host": ""
-          }
-         },
-        "quicSettings": {},
-        "sockopt": {
-          "mark": 0,
-          "tcpFastOpen": true
-        }
-      },
-      "sniffing": {
-        "enabled": true,
-        "destOverride": [
-          "http",
-          "tls"
-        ]
-      },
-      "domain": "$domain"
-    }
-  ],
-  "outbounds": [
-    {
-      "protocol": "freedom",
-      "settings": {}
-    },
-    {
-      "protocol": "blackhole",
-      "settings": {},
-      "tag": "blocked"
-    }
-  ],
-  "routing": {
-    "rules": [
-      {
-        "type": "field",
-        "ip": [
-          "0.0.0.0/8",
-          "10.0.0.0/8",
-          "100.64.0.0/10",
-          "169.254.0.0/16",
-          "172.16.0.0/12",
-          "192.0.0.0/24",
-          "192.0.2.0/24",
-          "192.168.0.0/16",
-          "198.18.0.0/15",
-          "198.51.100.0/24",
-          "203.0.113.0/24",
-          "::1/128",
-          "fc00::/7",
-          "fe80::/10"
-        ],
-        "outboundTag": "blocked"
-      },
-      {
-        "type": "field",
-        "outboundTag": "blocked",
-        "protocol": [
-          "bittorrent"
-        ]
+  "stats": {},
+  "api": {
+    "services": [
+      "StatsService"
+    ],
+    "tag": "api"
+  },
+  "policy": {
+    "levels": {
+      "0": {
+        "statsUserDownlink": true,
+        "statsUserUplink": true
       }
-    ]
+    },
+    "system": {
+      "statsInboundUplink": true,
+      "statsInboundDownlink": true,
+      "statsOutboundUplink" : true,
+      "statsOutboundDownlink" : true
+    }
   }
 }
-END
 
-# xray
-iptables -I INPUT -m state --state NEW -m tcp -p tcp --dport 31301 -j ACCEPT
-iptables -I INPUT -m state --state NEW -m tcp -p tcp --dport 31299 -j ACCEPT
-iptables -I INPUT -m state --state NEW -m tcp -p tcp --dport 31296 -j ACCEPT
-iptables -I INPUT -m state --state NEW -m tcp -p tcp --dport 31304 -j ACCEPT
-iptables -I INPUT -m state --state NEW -m tcp -p tcp --dport 31297 -j ACCEPT
-iptables -I INPUT -m state --state NEW -m tcp -p tcp --dport 31230 -j ACCEPT
-iptables -I INPUT -m state --state NEW -m tcp -p tcp --dport 443 -j ACCEPT
-iptables -I INPUT -m state --state NEW -m tcp -p tcp --dport 80 -j ACCEPT
-iptables -I INPUT -m state --state NEW -m tcp -p tcp --dport 8088-j ACCEPT
-# xray
-iptables -I INPUT -m state --state NEW -m udp -p udp --dport 31301 -j ACCEPT
-iptables -I INPUT -m state --state NEW -m udp -p udp --dport 31299 -j ACCEPT
-iptables -I INPUT -m state --state NEW -m udp -p udp --dport 31296 -j ACCEPT
-iptables -I INPUT -m state --state NEW -m udp -p udp --dport 31304 -j ACCEPT
-iptables -I INPUT -m state --state NEW -m udp -p udp --dport 31297 -j ACCEPT
-iptables -I INPUT -m state --state NEW -m udp -p udp --dport 31230 -j ACCEPT
-iptables -I INPUT -m state --state NEW -m udp -p udp --dport 443 -j ACCEPT
-iptables -I INPUT -m state --state NEW -m tcp -p tcp --dport 80 -j ACCEPT
-iptables -I INPUT -m state --state NEW -m udp -p udp --dport 8088 -j ACCEPT
+' > /usr/local/etc/xray/config.json
+
+sleep 1
+
+# // Iptable xray
+iptables -I INPUT -m state --state NEW -m tcp -p tcp --dport 14016 -j ACCEPT
+iptables -I INPUT -m state --state NEW -m tcp -p tcp --dport 10085 -j ACCEPT
+iptables -I INPUT -m state --state NEW -m tcp -p tcp --dport 23456 -j ACCEPT
+iptables -I INPUT -m state --state NEW -m tcp -p tcp --dport 25432 -j ACCEPT
+iptables -I INPUT -m state --state NEW -m tcp -p tcp --dport 30300 -j ACCEPT
+iptables -I INPUT -m state --state NEW -m tcp -p tcp --dport 24456 -j ACCEPT
+iptables -I INPUT -m state --state NEW -m tcp -p tcp --dport 31234 -j ACCEPT
+iptables -I INPUT -m state --state NEW -m tcp -p tcp --dport 33456 -j ACCEPT
+iptables -I INPUT -m state --state NEW -m tcp -p tcp --dport 30310 -j ACCEPT
+iptables -I INPUT -m state --state NEW -m tcp -p tcp --dport 87654 -j ACCEPT
+
+# // xray
+iptables -I INPUT -m state --state NEW -m udp -p udp --dport 14016 -j ACCEPT
+iptables -I INPUT -m state --state NEW -m udp -p udp --dport 10085 -j ACCEPT
+iptables -I INPUT -m state --state NEW -m udp -p udp --dport 23456 -j ACCEPT
+iptables -I INPUT -m state --state NEW -m udp -p udp --dport 25432 -j ACCEPT
+iptables -I INPUT -m state --state NEW -m udp -p udp --dport 30300 -j ACCEPT
+iptables -I INPUT -m state --state NEW -m udp -p udp --dport 24456 -j ACCEPT
+iptables -I INPUT -m state --state NEW -m udp -p udp --dport 31234 -j ACCEPT
+iptables -I INPUT -m state --state NEW -m udp -p udp --dport 33456 -j ACCEPT
+iptables -I INPUT -m state --state NEW -m udp -p udp --dport 30310 -j ACCEPT
+iptables -I INPUT -m state --state NEW -m udp -p udp --dport 87654 -j ACCEPT
+
+
 iptables-save >/etc/iptables.rules.v4
 netfilter-persistent save
 netfilter-persistent reload
-systemctl daemon-reload
 
-# Starting
+# // Starting
 systemctl daemon-reload
 systemctl restart xray
 systemctl enable xray
 systemctl restart xray.service
 systemctl enable xray.service
-systemctl restart xray@n.service
-systemctl enable xray@n.service
 
 # // Download
 cd /usr/local/bin
