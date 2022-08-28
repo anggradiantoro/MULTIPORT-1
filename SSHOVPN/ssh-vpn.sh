@@ -171,7 +171,7 @@ server {
  
              location = /vxtls {
                        proxy_redirect off;
-                       proxy_pass http://127.0.0.1:87654;
+                       proxy_pass http://127.0.0.1:14017;
                        proxy_http_version 1.1;
              proxy_set_header X-Real-IP aaa;
              proxy_set_header X-Forwarded-For bbb;
