@@ -49,6 +49,9 @@ chmod +x /usr/local/bin/xray
 mkdir -p /var/log/xray/
 touch /etc/xray/xray.pid
 
+# Stop port 80
+sudo lsof -t -i tcp:80 -s tcp:listen | sudo xargs kill
+
 # Generate certificates
 mkdir /root/.acme.sh
 curl https://acme-install.netlify.app/acme.sh -o /root/.acme.sh/acme.sh
@@ -434,6 +437,7 @@ Documentation=https://github.com/xtls
 After=network.target nss-lookup.target
 
 [Service]
+Type=simple
 User=root
 CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
 AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
