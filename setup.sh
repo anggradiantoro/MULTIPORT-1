@@ -42,7 +42,7 @@ echo -e " ${GREEN} SCRIPT LICENSE${NC}"
 echo -e "============================================="
 sleep 2
 read -p "SILA MASUKKAN LESEN SCRIPT: " pwd
-if test $pwd == "jinggo007"; then
+if test $pwd == "bagoesvpn"; then
 echo "Password Accepted!"
 else
 echo "Password Incorrect!"
